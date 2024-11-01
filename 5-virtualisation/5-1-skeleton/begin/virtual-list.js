@@ -185,7 +185,7 @@ export class VirtualList {
     const [top, bottom] = getObservers();
     if (direction === "down") {
       for (let i = 0; i < this.pool.length; i++) {
-        const [prev, curr] = [this.pool.at(i - 1), this.pool.at(i)];
+        const [prev, curr] = [this.pool.at(i - 1), this.pool[i]];
         if (y(prev) === null) {
           y(curr, 0);
         } else {
@@ -199,7 +199,7 @@ export class VirtualList {
       // To implement
     }
 
-    const [first, last] = [this.pool.at(0), this.pool.at(-1)];
+    const [first, last] = [this.pool[0], this.pool.at(-1)];
     const topY = y(first);
     const bottomY = y(last) + MARGIN * 2 + last.getBoundingClientRect().height;
     top.style.transform = translateY(topY);
