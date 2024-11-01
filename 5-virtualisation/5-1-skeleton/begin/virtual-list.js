@@ -77,6 +77,8 @@ export class VirtualList {
     this.root = root;
     this.start = 0;
     this.end = 0;
+    this.limit = this.props.getPage * 2;
+    this.pool = [];
   }
 
   /**
@@ -139,13 +141,23 @@ export class VirtualList {
 
   async #handleBottomObserver() {
     const data = await this.props.getPage(this.end++);
-    const list = getVirtualList();
-    const fragment = document.createDocumentFragment();
-    for (const datum of data) {
-      const card = this.props.getTemplate(datum);
-      fragment.appendChild(card);
+    if (this.pool.length < this.limit) {
+      const list = getVirtualList();
+      const fragment = document.createDocumentFragment();
+      for (const datum of data) {
+        const card = this.props.getTemplate(datum);
+        fragment.appendChild(card);
+        this.pool.push(card);
+      }
+      list.appendChild(fragment);
+    } else {
+      const [toRecycle, unchanged] = [
+        this.pool.slice(0, this.props.pageSize),
+        this.pool.slice(this.props.pageSize),
+      ];
+      this.pool = unchanged.concat(toRecycle);
+      this.#updateData(toRecycle, data);
     }
-    list.appendChild(fragment);
   }
 
   async #handleTopObserver() {}
@@ -157,7 +169,11 @@ export class VirtualList {
    * @param elements {HTMLElement[]} - HTML Elements to update
    * @param data {T[]} - Data to use for update
    */
-  #updateData(elements, data) {}
+  #updateData(elements, data) {
+    for (let i = 0; i < data.length; i++) {
+      this.props.updateTemplate(data[i], elements[i]);
+    }
+  }
 
   /**
    * Move elements on the screen using CSS Transform
