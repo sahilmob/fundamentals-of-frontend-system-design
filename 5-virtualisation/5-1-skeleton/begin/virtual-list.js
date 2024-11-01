@@ -77,7 +77,7 @@ export class VirtualList {
     this.root = root;
     this.start = 0;
     this.end = 0;
-    this.limit = this.props.getPage * 2;
+    this.limit = this.props.pageSize * 2;
     this.pool = [];
   }
 
@@ -158,6 +158,7 @@ export class VirtualList {
       this.pool = unchanged.concat(toRecycle);
       this.#updateData(toRecycle, data);
     }
+    this.#updateElementsPosition("down");
   }
 
   async #handleTopObserver() {}
@@ -183,8 +184,25 @@ export class VirtualList {
   #updateElementsPosition(direction) {
     const [top, bottom] = getObservers();
     if (direction === "down") {
+      for (let i = 0; i < this.pool.length; i++) {
+        const [prev, curr] = [this.pool.at(i - 1), this.pool.at(i)];
+        if (y(prev) === null) {
+          y(curr, 0);
+        } else {
+          const newY =
+            y(prev) + MARGIN * 2 + prev.getBoundingClientRect().height;
+          y(curr, newY);
+          curr.style.transform = translateY(newY);
+        }
+      }
     } else if (direction === "top") {
       // To implement
     }
+
+    const [first, last] = [this.pool.at(0), this.pool.at(-1)];
+    const topY = y(first);
+    const bottomY = y(last) + MARGIN * 2 + last.getBoundingClientRect().height;
+    top.style.transform = translateY(topY);
+    bottom.style.transform = translateY(bottomY);
   }
 }
