@@ -75,6 +75,8 @@ export class VirtualList {
   constructor(root, props) {
     this.props = { ...props };
     this.root = root;
+    this.start = 0;
+    this.end = 0;
   }
 
   /**
@@ -125,7 +127,6 @@ export class VirtualList {
    */
   #handleIntersectionObserver(entries) {
     for (const entry of entries) {
-      alert("works");
       if (entry.isIntersecting) {
         if (entry.target.id === "top-observer") {
           this.#handleTopObserver();
@@ -136,7 +137,16 @@ export class VirtualList {
     }
   }
 
-  async #handleBottomObserver() {}
+  async #handleBottomObserver() {
+    const data = await this.props.getPage(this.end++);
+    const list = getVirtualList();
+    const fragment = document.createDocumentFragment();
+    for (const datum of data) {
+      const card = this.props.getTemplate(datum);
+      fragment.appendChild(card);
+    }
+    list.appendChild(fragment);
+  }
 
   async #handleTopObserver() {}
 

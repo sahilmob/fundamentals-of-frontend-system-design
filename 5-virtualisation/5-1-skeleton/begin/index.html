@@ -32,14 +32,21 @@
      * @returns {HTMLElement}
      */
     function createOrUpdateCard(datum, element) {
-      return null;
+      const card =
+        element ?? template.content.cloneNode(true).firstElementChild;
+      const [cardTitle, cardBody] = card.querySelectorAll(
+        ".card__title, .card__body__content"
+      );
+      cardTitle.textContent = datum.title;
+      cardBody.textContent = datum.body;
+      return card;
     }
 
     const list = new VirtualList(container, {
-      getPage: null,
-      getTemplate: null,
-      pageSize: null,
-      updateTemplate: null,
+      getPage: (p) => DB.getPage(p),
+      getTemplate: createOrUpdateCard,
+      pageSize: 10,
+      updateTemplate: createOrUpdateCard,
     });
     list.render();
   </script>
