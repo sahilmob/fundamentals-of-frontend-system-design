@@ -130,9 +130,9 @@ export class VirtualList {
   #handleIntersectionObserver(entries) {
     for (const entry of entries) {
       if (entry.isIntersecting) {
-        if (entry.target.id === "top-observer") {
+        if (entry.target.id === "top-observer" && this.start > 0) {
           this.#handleTopObserver();
-        } else {
+        } else if (entry.target.id === "bottom-observer") {
           this.#handleBottomObserver();
         }
       }
@@ -141,6 +141,7 @@ export class VirtualList {
 
   async #handleBottomObserver() {
     const data = await this.props.getPage(this.end++);
+    const container = getContainer();
     if (this.pool.length < this.limit) {
       const list = getVirtualList();
       const fragment = document.createDocumentFragment();
@@ -157,11 +158,24 @@ export class VirtualList {
       ];
       this.pool = unchanged.concat(toRecycle);
       this.#updateData(toRecycle, data);
+      this.start++;
     }
     this.#updateElementsPosition("down");
+    container.style.height = `${container.scrollHeight}px`;
   }
 
-  async #handleTopObserver() {}
+  async #handleTopObserver() {
+    this.start--;
+    this.end--;
+    const data = await this.props.getPage(this.start);
+    const [unchanged, toRecycle] = [
+      this.pool.slice(0, this.props.pageSize),
+      this.pool.slice(this.props.pageSize),
+    ];
+    this.pool = toRecycle.concat(unchanged);
+    this.#updateData(toRecycle, data);
+    this.#updateElementsPosition("top");
+  }
 
   /**
    * Function uses `props.getTemplate` to update the html elements
@@ -196,7 +210,12 @@ export class VirtualList {
         }
       }
     } else if (direction === "top") {
-      // To implement
+      for (let i = this.props.pageSize - 1; i >= 0; i--) {
+        const [curr, next] = [this.pool[i], this.pool.at(i + 1)];
+        const newY = y(next) - MARGIN * 2 - curr.getBoundingClientRect().height;
+        y(curr, newY);
+        curr.style.transform = translateY(newY);
+      }
     }
 
     const [first, last] = [this.pool[0], this.pool.at(-1)];
